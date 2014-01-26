@@ -1,0 +1,36 @@
+<head>
+  <title>Leaderboard</title>
+</head>
+
+<body>
+  <div id="outer">
+    {{> leaderboard}}
+  </div>
+</body>
+
+<template name="leaderboard">
+  <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
+  <h2>{{clock}} seconds left!</h2>
+  <div class="leaderboard">
+    {{#each players}}
+      {{> player}}
+    {{/each}}
+  </div>
+
+  {{#if selected_name}}
+  <!--<div class="details">
+    <div class="name">{{selected_name}}</div>
+    <input type="button" class="inc" value="Give 5 points" />
+  </div>-->
+  {{else}}
+  <div class="none">Cast your vote, peasant!</div>
+  {{/if}}
+</template>
+
+<template name="player">
+  <div class="player {{selected}}">
+    <span class="name">{{name}}</span>
+    <span class="score">{{score}} / {{goal}}</span>
+  </div>
+</template>
+
