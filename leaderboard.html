@@ -3,7 +3,7 @@
 </head>
 
 <body>
-  <div id="outer">
+  <div id="outer" class="stamp vote">
     <h1>Wahl Skandal!</h1>
 
     {{> leaderboard}}
@@ -11,7 +11,7 @@
 </body>
 
 <template name="leaderboard">
-  <div class="leaderboard stamp vote">
+  <div class="leaderboard">
     <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
     <h2>{{clock}} seconds left!</h2>
   </div>
