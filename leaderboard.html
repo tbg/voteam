@@ -1,9 +1,11 @@
 <head>
-  <title>Leaderboard</title>
+  <title>Wahl Skandal!</title>
 </head>
 
 <body>
   <div id="outer">
+    <h1>Wahl Skandal!</h1>
+
     {{> leaderboard}}
   </div>
 </body>
@@ -28,9 +30,18 @@
 </template>
 
 <template name="player">
-  <div class="player {{selected}}">
-    <span class="name">{{name}}</span>
-    <span class="score">{{score}} / {{goal}}</span>
+  <div class="player {{selected}} {{goal_met}}">
+    <div class="percent">
+      {{percent}}%
+      <br/>
+      <span class="ok">OK</span>
+      <span class="not-ok">of {{goal}}%</span>
+    </div>
+    <div class="name">{{name}}</div>
+    <div class="bars">
+      <div class="bar result" style="width: {{percent}}%"></div>
+      <div class="bar goal" style="left: {{goal_lower}}%; width: {{goal_width}}%"></div>
+    </div>
   </div>
 </template>
 
