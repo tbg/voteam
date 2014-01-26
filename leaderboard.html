@@ -9,7 +9,7 @@
 </body>
 
 <template name="leaderboard">
-  <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
+  <p>Citizen {{sessionId}}, hurry up and cast your free votes! {{votecount}} @game{{gamecount}}</p>
   <h2>{{clock}} seconds left!</h2>
   <div class="leaderboard">
     {{#each players}}
