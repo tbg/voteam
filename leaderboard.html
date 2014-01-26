@@ -9,9 +9,11 @@
 </body>
 
 <template name="leaderboard">
-  <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
-  <h2>{{clock}} seconds left!</h2>
-  <div class="leaderboard">
+  <div class="leaderboard stamp vote">
+    <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
+    <h2>{{clock}} seconds left!</h2>
+  </div>
+  <div class="leaderboard stamp dissenters">
     {{#each players}}
       {{> player}}
     {{/each}}
