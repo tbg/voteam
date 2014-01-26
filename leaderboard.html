@@ -11,10 +11,8 @@
 </body>
 
 <template name="leaderboard">
-  <div class="leaderboard">
-    <p>Citizen {{sessionId}}, hurry up and cast your free votes!</p>
-    <h2>{{clock}} seconds left!</h2>
-  </div>
+  <p>Citizen {{sessionId}}, hurry up and cast your free votes! {{votecount}} @game{{gamecount}}</p>
+  <h2>{{clock}} seconds left!</h2>
   <div class="leaderboard stamp dissenters">
     {{#each players}}
       {{> player}}

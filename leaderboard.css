@@ -15,7 +15,7 @@ body {
 #outer {
     width: 600px;
     margin-top:0;
-    margin: 0 auto;    
+    margin: 0 auto;
 }
 
 .player {
@@ -97,7 +97,6 @@ body {
 
 div.stamp
 {
-  display:inline-block;
   vertical-align:top;
   box-sizing:border-box;
   position:relative;
@@ -107,8 +106,8 @@ div.stamp.vote:after
 {
     content:"VOTE!";
     position:absolute;
-    top:40px;
-    left:50px;
+    top:10px;
+    right:50px;
     z-index:-99;
     font-family:Arial,sans-serif;
     -webkit-transform: rotate(10deg);
@@ -134,7 +133,7 @@ div.stamp.dissenters:after
 {
     content:"DISSENTERS NOT ALLOWED!";
     position:absolute;
-    top:40px;
+    top:80px;
     left:50px;
     z-index:-99;
     font-family:Arial,sans-serif;

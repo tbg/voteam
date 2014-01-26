@@ -4,19 +4,37 @@
 Players = new Meteor.Collection("players");
 Users = new Meteor.Collection("users");
 Clock = new Meteor.Collection("clock");
+Votecount = new Meteor.Collection("votecount");
+Games = new Meteor.Collection('game');
+
 
 if (Meteor.isClient) {
-  if (!Session.get('sessionId')) {
-    var sessionId = Users.insert({'loggedIn': true, 'date': new Date()});
+  if (!Session.get('sessionId') || !Users.findOne({_id: Session.get('sessionId') })) {
+    var sessionId = Users.insert({'loggedIn': true, 'voted': false});
     Session.set('sessionId', sessionId);
   }
   Template.leaderboard.sessionId = function() {
     return Session.get('sessionId');
   };
+  Template.leaderboard.votecount = function() {
+    var ret = Votecount.findOne();
+    if(ret) {
+      return ret.votes;
+    }
+    return 0;
+  };
   Template.leaderboard.clock = function() {
     var ret = Clock.findOne();
     if (ret) {
       return ret.clock;
+    }
+    return '0';
+  };
+  Template.leaderboard.gamecount = function() {
+    var ret = Games.findOne();
+    if (ret) {
+      // TODO Session.set('selected_player', undefined);
+      return ret.count;
     }
     return '0';
   };
@@ -44,8 +62,10 @@ if (Meteor.isClient) {
   Template.player.events({
     'click': function () {
       if (Session.get('selected_player')) {
-        Players.update(Session.get("selected_player"), 
-          {$inc: {score: -1, percent: -1}});
+        //TODO
+        Players.update(Session.get("selected_player"), {$inc: {score: -1, percent: -1}});
+      } else {
+        Votecount.update(Votecount.findOne()._id, { $inc: {votes: 1} });
       }
       Session.set("selected_player", this._id);
       Players.update(this._id, {$inc: {score: 1, percent: 1}});
@@ -56,6 +76,11 @@ if (Meteor.isClient) {
 // On server startup, create some players if the database is empty.
 if (Meteor.isServer) {
   Meteor.startup(function () {
+    Games.remove({});
+    Clock.remove({});
+    Players.remove({});
+    Games.insert({ count: 0 });
+
     if (Players.find().count() === 0) {
       var perc = [];
       var names = ["Ada Lovelace",
@@ -65,9 +90,12 @@ if (Meteor.isServer) {
                    "Nikola Tesla",
                    "Claude Shannon"];
       for (var i = 0; i < names.length; i++)
-        perc.push(5+Random.fraction()*10);
+        perc.push(Math.floor(Random.fraction()*100));
 
       var nrmlz = perc.reduce(function(a,b) { return a+b; });
+ 
+      Clock.insert({clock: initialClock});
+      Votecount.insert({votes: 0});
       var goal;
       for (var i = 0; i < names.length; i++) {
         goal = Math.round((perc[i] / nrmlz)*100);
@@ -82,18 +110,21 @@ if (Meteor.isServer) {
       }
       
     }
-    var initialClock = 30;
-    var clockId = Clock.insert({clock: initialClock});
+    var clockId = Clock.findOne()._id;
+    var votesId = Votecount.findOne()._id;
+    var initialClock = 20;
     var clock = initialClock;
     var interval = Meteor.setInterval(function () {
       clock -= 1;
       Clock.update(clockId, {$set: {clock: clock}});
       if(clock <= 0) {
         clock = initialClock;
+        Votecount.update(votesId, {votes: 0});
+        Games.update(Games.findOne()._id, { $inc: { count: 1}});
+        //Users.remove({});
         //Meteor.clearInterval(interval);
         // new game?
       }
     }, 1000);
-    
   });
 }
