@@ -33,21 +33,23 @@ if (Meteor.isClient) {
     return Session.equals("selected_player", this._id) ? "selected" : '';
   };
 
-  Template.leaderboard.events({
-    'click input.inc': function () {
-    }
+  Template.player.goal_met = function() {
+    return this.percent > this.goal_lower && this.percent < this.goal_upper ? 'goal-met' : '';
+  };
 
-  });
+  Template.player.goal_width = function() {
+    return this.goal_upper - this.goal_lower;
+  }
 
   Template.player.events({
     'click': function () {
       if (Session.get('selected_player')) {
-        Players.update(Session.get("selected_player"), {$inc: {score: -1}});
+        Players.update(Session.get("selected_player"), 
+          {$inc: {score: -1, percent: -1}});
       }
       Session.set("selected_player", this._id);
-      Players.update(this._id, {$inc: {score: 1}});
+      Players.update(this._id, {$inc: {score: 1, percent: 1}});
     }
-    
   });
 }
 
@@ -66,8 +68,18 @@ if (Meteor.isServer) {
         perc.push(5+Random.fraction()*10);
 
       var nrmlz = perc.reduce(function(a,b) { return a+b; });
-      for (var i = 0; i < names.length; i++)
-        Players.insert({name: names[i], score: 0, goal: perc[i] / nrmlz});
+      var goal;
+      for (var i = 0; i < names.length; i++) {
+        goal = Math.round((perc[i] / nrmlz)*100);
+        Players.insert({
+          name: names[i], 
+          score: 0, 
+          percent: 0,
+          goal_lower: Math.max(0, goal - 5),
+          goal_upper: Math.min(100, goal + 5),
+          goal: goal
+        });
+      }
       
     }
     var initialClock = 30;

@@ -10,6 +10,8 @@ body {
     user-select: none;
 }
 
+
+
 #outer {
     width: 600px;
     margin-top:0;
@@ -17,49 +19,80 @@ body {
 }
 
 .player {
-    cursor: pointer;
-    padding: 5px;
+  cursor: pointer;
+  padding: 5px;
+  height: 70px;
+  margin-bottom: 20px;
+}
+
+.player .percent {
+  background: rgba(255,0,0,0.2);
+  float: left;
+  height: 70px;
+  width: 70px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .player .name {
-    display: inline-block;
-    width: 300px;
-    font-size: 1.75em;
-}
-
-.player .score {
-    display: inline-block;
-    width: 100px;
-    text-align: right;
-    font-size: 2em;
-    font-weight: bold;
-    color: #777;
+  font-weight: bold;
+  margin-left: 75px;
 }
 
 .player.selected {
-    background-color: yellow;
+  background-color: yellow;
 }
 
-.player.selected .score {
-    color: black;
+.player .bars {
+  position: relative;
+  margin-top: 5px;
+  margin-left: 75px;
 }
 
-.details, .none {
-    font-weight: bold;
-    font-size: 2em;
-    border-style: dashed none none none;
-    border-color: #ccc;
-    border-width: 4px;
-    margin: 50px 10px;
-    padding: 10px 0px;
+.player .bars .bar {
+  position: absolute;
+  left: 0px;
+  top: 0px;
 }
 
-.none {
-    color: #777;
+.player .bars .goal {
+  border-right: solid 2px black;
+  border-left: solid 2px black;
+  background: rgba(0,255,0, 0.5);
+  height: 24px;
+  top: -2px;
 }
 
-.inc {
-  cursor: pointer;
+.player .percent .ok {
+  display: none;
+  color: green;
+}
+
+.player .percent .not-ok {
+  color: red;
+  font-size: 10px;
+}
+
+.player.goal-met .percent {
+  background: rgba(0,255,0,0.2);
+}
+
+.player.goal-met .percent .ok {
+  display: block;
+}
+
+.player.goal-met .percent .not-ok {
+  display: none;
+}
+
+.player.goal-met .bars .result {
+  background-color: green;
+}
+
+.player .bars .result {
+  height: 20px;
+  background-color: red;
 }
 
 div.stamp
