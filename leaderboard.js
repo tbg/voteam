@@ -1,130 +1,125 @@
-// Set up a collection to contain player information. On the server,
-// it is backed by a MongoDB collection named "players".
-
-Players = new Meteor.Collection("players");
-Users = new Meteor.Collection("users");
 Clock = new Meteor.Collection("clock");
-Votecount = new Meteor.Collection("votecount");
-Games = new Meteor.Collection('game');
-
-
+Players = new Meteor.Collection("players");
 if (Meteor.isClient) {
-  if (!Session.get('sessionId') || !Users.findOne({_id: Session.get('sessionId') })) {
-    var sessionId = Users.insert({'loggedIn': true, 'voted': false});
-    Session.set('sessionId', sessionId);
-  }
-  Template.leaderboard.sessionId = function() {
-    return Session.get('sessionId');
-  };
-  Template.leaderboard.votecount = function() {
-    var ret = Votecount.findOne();
-    if(ret) {
-      return ret.votes;
+  clockSubscription = Meteor.subscribe('clock');
+  playerSubscription = Meteor.subscribe('players', Session.get('selected_player'));
+  var clock = 9999;
+  Deps.autorun(function () {
+    clock = clockSubscription.ready() ? Clock.findOne().clock : 9999;
+    if (clock == 0) {
+      Session.set('gameIsWon', false);
+      Session.set('selected_player', undefined);
+    }
+  });
+  var voteCount = function() {
+    if(playerSubscription.ready()) {
+      return Players.find({}, {votes: true}).fetch()
+        .map(function (e) { return e.votes; })
+        .reduce(function (a, b) { return a+b; }, 0);
     }
     return 0;
   };
-  Template.leaderboard.clock = function() {
-    var ret = Clock.findOne();
-    if (ret) {
-      return ret.clock;
+  var players_transformed = function () {
+    var totalVotes = voteCount() || 1;
+    var voteDiscrepancy = 0;
+    var maxIndex = 0;
+    var ret = Players.find({}, {
+      transform: function (p) {
+        var exact = totalVotes/100 * p.goal;
+        // smart rounding so that we're at most one off at the end 
+        p.goalVotes = voteDiscrepancy > 0 ? Math.ceil(exact) : Math.floor(exact);
+        voteDiscrepancy += exact - p.goalVotes;
+        return p;
+      }
+    }).fetch();
+    if(ret.length > 0) {
+      var wantedVoteSum = 0;
+      ret.forEach(function (k, i) {
+        wantedVoteSum += k.goalVotes;
+        maxIndex = (k.goalVotes > ret[maxIndex].goalVotes) ? i : maxIndex;
+      });
+      // the discrepancy is at most one, and the maximum index is at least one,
+      // so we won't create a negative desired vote count here.
+      ret[maxIndex].goalVotes += totalVotes - wantedVoteSum;
+      ret.map(function (p) {
+        p.goal = 100 * p.goalVotes / totalVotes;
+        return p;
+      });
     }
-    return '0';
+    return ret;
   };
-  Template.leaderboard.gamecount = function() {
-    var ret = Games.findOne();
-    if (ret) {
-      // TODO Session.set('selected_player', undefined);
-      return ret.count;
-    }
-    return '0';
+  Deps.autorun(function () {
+    var gameIsWon = true;
+    players_transformed().forEach(function(p) {
+      gameIsWon = gameIsWon && (p.goalVotes == p.votes);
+    });
+    Session.set('gameIsWon', gameIsWon);
+  });
+  Template.voting.clock = function() {
+    return clockSubscription.ready() ? Clock.findOne().clock : 0;
   };
-  Template.leaderboard.players = function () {
-    return Players.find({}, {sort: {name: 1}});
+  Template.voting.won = function() {
+    return Session.get('gameIsWon') || false;
   };
-
-  Template.leaderboard.selected_name = function () {
-    var player = Players.findOne(Session.get("selected_player"));
+  Template.voting.players = function() {
+    return playerSubscription.ready() ? Players.find({}, {sort: {name: -1}}) : [];
+  };
+  Template.voting.selected_name = function () {
+    var player = Players.findOne(Session.get('selected_player'));
     return player && player.name;
   };
-
+  Template.voting.voteCount = voteCount;
+  Template.voting.players_transformed = players_transformed;
   Template.player.selected = function () {
-    return Session.equals("selected_player", this._id) ? "selected" : '';
+    return Session.equals('selected_player', this._id) ? "selected" : "";
   };
-
-  Template.player.goal_met = function() {
-    return this.percent > this.goal_lower && this.percent < this.goal_upper ? 'goal-met' : '';
+  Template.player.votePercent = function () {
+    return this.votes * 100 / voteCount();
   };
-
-  Template.player.goal_width = function() {
-    return this.goal_upper - this.goal_lower;
-  }
-
-  Template.player.events({
+  Template.player.goalMet = function () {
+    return (this.votes === this.goalVotes) ? "goal-met" : "";
+  };
+  Template.player.events = ({
     'click': function () {
-      if (Session.get('selected_player')) {
-        //TODO
-        Players.update(Session.get("selected_player"), {$inc: {score: -1, percent: -1}});
+      if(Session.get('selected_player')) {
+        Players.update(Session.get('selected_player'), { $inc: { votes: -1 }});
       } else {
-        Votecount.update(Votecount.findOne()._id, { $inc: {votes: 1} });
-      }
-      Session.set("selected_player", this._id);
-      Players.update(this._id, {$inc: {score: 1, percent: 1}});
+      } 
+      Session.set('selected_player', this._id);
+      Players.update(Session.get('selected_player'), { $inc: { votes: 1 }});
     }
   });
 }
 
-// On server startup, create some players if the database is empty.
 if (Meteor.isServer) {
   Meteor.startup(function () {
-    Games.remove({});
     Clock.remove({});
-    Players.remove({});
-    Games.insert({ count: 0 });
-
-    if (Players.find().count() === 0) {
-      var perc = [];
-      var names = ["Ada Lovelace",
-                   "Grace Hopper",
-                   "Marie Curie",
-                   "Carl Friedrich Gauss",
-                   "Nikola Tesla",
-                   "Claude Shannon"];
-      for (var i = 0; i < names.length; i++)
-        perc.push(Math.floor(Random.fraction()*100));
-
-      var nrmlz = perc.reduce(function(a,b) { return a+b; });
- 
-      Clock.insert({clock: initialClock});
-      Votecount.insert({votes: 0});
-      var goal;
-      for (var i = 0; i < names.length; i++) {
-        goal = Math.round((perc[i] / nrmlz)*100);
-        Players.insert({
-          name: names[i], 
-          score: 0, 
-          percent: 0,
-          goal_lower: Math.max(0, goal - 5),
-          goal_upper: Math.min(100, goal + 5),
-          goal: goal
-        });
-      }
-      
-    }
+    Clock.insert({clock: initialClock});
+    var newGame = function () {
+      names = ["Option 1", "Option 2", "Option 3"];
+      goals = [0, 50, 50];
+      Players.remove({});
+      names.forEach(function(name, id) {
+        Players.insert({name: name, votes: 0, goal: goals[id]});
+      });
+    };
     var clockId = Clock.findOne()._id;
-    var votesId = Votecount.findOne()._id;
-    var initialClock = 20;
+    var initialClock = 28;
     var clock = initialClock;
     var interval = Meteor.setInterval(function () {
       clock -= 1;
       Clock.update(clockId, {$set: {clock: clock}});
       if(clock <= 0) {
         clock = initialClock;
-        Votecount.update(votesId, {votes: 0});
-        Games.update(Games.findOne()._id, { $inc: { count: 1}});
-        //Users.remove({});
-        //Meteor.clearInterval(interval);
-        // new game?
+        newGame();
       }
     }, 1000);
+  });
+
+  Meteor.publish('clock', function() {
+    return Clock.find({});
+  });
+  Meteor.publish('players', function () {
+    return Players.find({});
   });
 }

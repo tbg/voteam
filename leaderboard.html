@@ -6,42 +6,35 @@
   <div id="outer" class="stamp vote">
     <h1>Wahl Skandal!</h1>
 
-    {{> leaderboard}}
+    {{> voting}}
   </div>
 </body>
 
-<template name="leaderboard">
-  <p>Citizen {{sessionId}}, hurry up and cast your free votes! {{votecount}} @game{{gamecount}}</p>
-  <h2>{{clock}} seconds left!</h2>
-  <div class="leaderboard stamp dissenters">
-    {{#each players}}
-      {{> player}}
+<template name="voting">
+<h2>{{clock}} seconds left! {{voteCount}} votes cast!</h2>
+  {{#unless selected_name}}
+  <p>Cast your vote, quickly!</p>
+  {{else}}
+    {{#unless won}}
+  <p>You're voting for {{selected_name}}. Sure about that?</p>
+    {{else}}
+  <p class="won">Good job! Now nobody change their mind...</p>
+    {{/unless}}
+  {{/unless}}
+  <div class="leaderboard">
+    {{#each players_transformed}}
+      {{>player}}
     {{/each}}
   </div>
-
-  {{#if selected_name}}
-  <!--<div class="details">
-    <div class="name">{{selected_name}}</div>
-    <input type="button" class="inc" value="Give 5 points" />
-  </div>-->
-  {{else}}
-  <div class="none">Cast your vote, peasant!</div>
-  {{/if}}
+  <p>The green bars represent the desired result of the vote, the red bars are the status quo. Make sure to vote the right way or a troubled future awaits you...</p>
 </template>
-
 <template name="player">
-  <div class="player {{selected}} {{goal_met}}">
-    <div class="percent">
-      {{percent}}%
-      <br/>
-      <span class="ok">OK</span>
-      <span class="not-ok">of {{goal}}%</span>
-    </div>
+  <div class="player {{goalMet}} {{selected}}">
+    <div class="percent">{{votes}}</div>
     <div class="name">{{name}}</div>
     <div class="bars">
-      <div class="bar result" style="width: {{percent}}%"></div>
-      <div class="bar goal" style="left: {{goal_lower}}%; width: {{goal_width}}%"></div>
+      <div class="bar result" style="width:{{votePercent}}%"></div>
+      <div class="bar goal" style="width:{{goal}}%"></div>
     </div>
   </div>
 </template>
-
