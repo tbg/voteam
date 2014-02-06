@@ -93,16 +93,28 @@ if (Meteor.isClient) {
 
 if (Meteor.isServer) {
   Meteor.startup(function () {
+    var names, goals;
     Clock.remove({});
     Clock.insert({clock: initialClock});
     var newGame = function () {
+      var cuts;
+      var lastCut = 0;
+      goals = [];
       names = ["Option 1", "Option 2", "Option 3"];
-      goals = [0, 50, 50];
+      names.map(function () { return Math.random(); }).sort().forEach(function (c) {
+        goals.push(c - lastCut);
+        lastCut = c;
+      });
+      // the last cut interval should reach all the way to 1, not up to the
+      // largest random number
+      goals.push(goals.pop() + 1 - lastCut);
+      goals = _.shuffle(goals);
       Players.remove({});
       names.forEach(function(name, id) {
-        Players.insert({name: name, votes: 0, goal: goals[id]});
+        Players.insert({name: name, votes: 0, goal: 100 * goals[id]});
       });
     };
+    newGame();
     var clockId = Clock.findOne()._id;
     var initialClock = 28;
     var clock = initialClock;
